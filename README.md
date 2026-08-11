@@ -1,5 +1,7 @@
 # ChurnSense
 
+[![Open Live App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://churnsense-a5og4sz54idgeslzccfrrn.streamlit.app/)
+
 AI-powered customer churn prediction dashboard built with Python,
 Machine Learning, and Streamlit.
 
