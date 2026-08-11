@@ -521,9 +521,6 @@ if page == "Dashboard":
             """, unsafe_allow_html=True)
             st.write("")
 
-    # ---------- Run prediction ----------
-    
-
     # ---------- Risk Indicators ----------
     st.write("")
     if result is None:
