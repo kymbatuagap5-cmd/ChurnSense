@@ -306,7 +306,6 @@ CARD_CSS = """
     box-shadow: 0 12px 32px rgba(0,0,0,.35);
 }
 """
-
 # -------------------------------------------------
 # Load trained model
 # -------------------------------------------------
@@ -433,6 +432,53 @@ if page == "Dashboard":
                 last_interaction = st.number_input("Last Interaction (days)", min_value=0, max_value=100, value=10)
             st.write("")
             predict_button = st.button("Predict Customer", use_container_width=True, key="predict_btn")
+    input_data = pd.DataFrame({
+            "Age": [age],
+            "Tenure": [tenure],
+            "Usage Frequency": [usage_frequency],
+            "Support Calls": [support_calls],
+            "Payment Delay": [payment_delay],
+            "Total Spend": [total_spend],
+            "Last Interaction": [last_interaction],
+            "Gender_Male": [1 if gender == "Male" else 0],
+            "Subscription Type_Premium": [1 if subscription_type == "Premium" else 0],
+            "Subscription Type_Standard": [1 if subscription_type == "Standard" else 0],
+            "Contract Length_Monthly": [1 if contract_length == "Monthly" else 0],
+            "Contract Length_Quarterly": [1 if contract_length == "Quarterly" else 0]
+    })
+    if predict_button:
+        prediction = int(model.predict(input_data)[0])
+        prediction_text = "Likely to Churn" if prediction == 1 else "No Churn"
+        reasons = []
+        if support_calls >= 5:
+            reasons.append(("phone", "High support calls", "red"))
+        if payment_delay >= 10:
+            reasons.append(("card", "Payment delays", "red"))
+        if tenure <= 6:
+            reasons.append(("calendar", "Short tenure", "orange"))
+        if contract_length == "Monthly":
+            reasons.append(("file", "Monthly contract", "red"))
+        if total_spend < 300:
+            reasons.append(("dollar", "Low total spending", "orange"))
+        if usage_frequency <= 3:
+            reasons.append(("activity", "Low usage", "orange"))
+        st.session_state.last_result = {"prediction": prediction, "reasons": reasons}
+        customer_record = {
+                "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "Prediction": prediction_text,
+                "Age": age,
+                "Gender": gender,
+                "Subscription": subscription_type,
+                "Contract": contract_length,
+                "Support Calls": support_calls,
+                "Payment Delay": payment_delay,
+                "Total Spend": round(total_spend, 2),
+                "Tenure": tenure,
+                "Usage Frequency": usage_frequency,
+        }
+        st.session_state.history.append(customer_record)
+        st.toast("Prediction added to history!")
+    result = st.session_state.last_result
     with right_panel:
         with stylable_container(key="prediction_card", css_styles=CARD_CSS):
             st.markdown(f"""
@@ -476,54 +522,7 @@ if page == "Dashboard":
             st.write("")
 
     # ---------- Run prediction ----------
-    input_data = pd.DataFrame({
-        "Age": [age],
-        "Tenure": [tenure],
-        "Usage Frequency": [usage_frequency],
-        "Support Calls": [support_calls],
-        "Payment Delay": [payment_delay],
-        "Total Spend": [total_spend],
-        "Last Interaction": [last_interaction],
-        "Gender_Male": [1 if gender == "Male" else 0],
-        "Subscription Type_Premium": [1 if subscription_type == "Premium" else 0],
-        "Subscription Type_Standard": [1 if subscription_type == "Standard" else 0],
-        "Contract Length_Monthly": [1 if contract_length == "Monthly" else 0],
-        "Contract Length_Quarterly": [1 if contract_length == "Quarterly" else 0]
-    })
-
-    if predict_button:
-        prediction = int(model.predict(input_data)[0])
-        prediction_text = "Likely to Churn" if prediction == 1 else "No Churn"
-        reasons = []
-        if support_calls >= 5:
-            reasons.append(("phone", "High support calls", "red"))
-        if payment_delay >= 10:
-            reasons.append(("card", "Payment delays", "red"))
-        if tenure <= 6:
-            reasons.append(("calendar", "Short tenure", "orange"))
-        if contract_length == "Monthly":
-            reasons.append(("file", "Monthly contract", "red"))
-        if total_spend < 300:
-            reasons.append(("dollar", "Low total spending", "orange"))
-        if usage_frequency <= 3:
-            reasons.append(("activity", "Low usage", "orange"))
-        st.session_state.last_result = {"prediction": prediction, "reasons": reasons}
-        customer_record = {
-            "Time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "Prediction": prediction_text,
-            "Age": age,
-            "Gender": gender,
-            "Subscription": subscription_type,
-            "Contract": contract_length,
-            "Support Calls": support_calls,
-            "Payment Delay": payment_delay,
-            "Total Spend": round(total_spend, 2),
-            "Tenure": tenure,
-            "Usage Frequency": usage_frequency,
-        }
-        st.session_state.history.append(customer_record)
-        st.toast("Prediction added to history!")
-        result = st.session_state.last_result
+    
 
     # ---------- Risk Indicators ----------
     st.write("")
